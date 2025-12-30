@@ -1,0 +1,13 @@
+{
+  "name": "图层优化助手",
+  "id": "1587362778645810650",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": { "allowedDomains": ["none"] },
+  "menu": [
+    { "name": "打开插件", "command": "open-plugin" }
+  ]
+}

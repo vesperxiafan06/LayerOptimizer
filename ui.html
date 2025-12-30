@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图层优化助手</title>
+  <style>
+    :root {
+      --primary-color: #333333;
+      --primary-hover: #555555;
+      --primary-light: #f5f5f5;
+      --secondary-color: #666666;
+      --success-color: #666666;
+      --warning-color: #888888;
+      --error-color: #333333;
+      --background: #ffffff;
+      --surface: #ffffff;
+      --surface-hover: #f8f8f8;
+      --border: #e0e0e0;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --text-muted: #999999;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 2px 4px 0 rgb(0 0 0 / 0.08);
+      --shadow-lg: 0 4px 8px 0 rgb(0 0 0 / 0.12);
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --radius-xl: 12px;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      margin: 0;
+      padding: 0;
+      color: var(--text-primary);
+      background: var(--background);
+      font-size: 13px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    
+    .container {
+      padding: 20px;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    
+    .language-switcher {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      gap: 8px;
+    }
+    
+    .plugin-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    
+    .language-switcher button {
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .language-switcher button.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+    
+    .language-switcher button:hover:not(.active) {
+      background: var(--surface-hover);
+      color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    
+    .section {
+      margin-bottom: 20px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+    
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-primary);
+    }
+    
+    .section-title .count {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      min-width: 24px;
+      text-align: center;
+    }
+    
+    .issue-list {
+      max-height: 140px;
+      overflow-y: auto;
+      margin-bottom: 12px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary-color) transparent;
+    }
+    
+    .issue-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .issue-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .issue-list::-webkit-scrollbar-thumb {
+      background: var(--primary-color);
+      border-radius: 2px;
+    }
+    
+    .issue-item {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      padding: 0 12px;
+      border-radius: var(--radius-md);
+      margin-bottom: 4px;
+      background: var(--surface-hover);
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+      border: 1px solid var(--border);
+    }
+    
+    .issue-item:hover {
+      background: var(--surface);
+      border-color: var(--primary-color);
+    }
+    
+    .issue-item:hover .issue-name {
+      color: var(--primary-color);
+    }
+    
+    .issue-item input[type="checkbox"] {
+      margin-right: 12px;
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary-color);
+      cursor: pointer;
+      flex-shrink: 0;
+      pointer-events: auto;
+    }
+    
+    .issue-item input[type="checkbox"]:hover {
+      transform: scale(1.1);
+      transition: transform 0.2s ease;
+    }
+    
+    .issue-content {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
+    
+    .issue-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      font-size: 13px;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    
+    .issue-name:hover {
+      color: var(--primary-color);
+      text-decoration: underline;
+    }
+    
+    .issue-tooltip {
+      position: relative;
+      margin-left: 8px;
+      flex-shrink: 0;
+    }
+    
+    .issue-tooltip-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: help;
+      line-height: 1;
+    }
+    
+    .issue-tooltip-content {
+      position: fixed;
+      padding: 8px 12px;
+      background: var(--text-primary);
+      color: white;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 10000;
+      box-shadow: var(--shadow-lg);
+      transform: translateX(-50%);
+    }
+    
+    .issue-tooltip-content::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: var(--text-primary);
+    }
+    
+    
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    
+    button {
+      padding: 12px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    
+    .primary-button {
+      background: var(--primary-color);
+      color: white;
+      flex: 1;
+      border-color: var(--primary-color);
+    }
+    
+    .primary-button:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+    
+    .primary-button:disabled {
+      background: var(--text-muted);
+      border-color: var(--text-muted);
+      cursor: not-allowed;
+    }
+    
+    .secondary-button {
+      background: var(--surface);
+      color: var(--text-primary);
+      border-color: var(--border);
+    }
+    
+    .secondary-button:hover {
+      background: var(--surface-hover);
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+    
+    
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 32px 16px;
+    }
+    
+    .spinner {
+      border: 3px solid var(--border);
+      border-top: 3px solid var(--primary-color);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 12px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+
+    
+    .progress-container {
+      width: 100%;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: var(--primary-color);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 3px;
+    }
+    
+    .error {
+      background: var(--surface-hover);
+      color: var(--error-color);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--error-color);
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .success {
+      background: var(--surface-hover);
+      color: var(--success-color);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--success-color);
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .warning-notification {
+      background: linear-gradient(135deg, #fffbeb, #fef3c7);
+      border: 1px solid var(--warning-color);
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--warning-color);
+    }
+    
+    .warning-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .warning-content p {
+      color: #92400e;
+      margin: 0;
+      font-weight: 500;
+      font-size: 12px;
+    }
+    
+    
+    .optimization-summary {
+      background: var(--surface-hover);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+      font-weight: 500;
+    }
+    
+    .notification {
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+    }
+    
+    .notification.info {
+      background: var(--surface-hover);
+      color: #1d4ed8;
+      border-left: 4px solid #3b82f6;
+    }
+    
+    .notification.warning {
+      background: var(--surface-hover);
+      color: #d97706;
+      border-left: 4px solid var(--warning-color);
+    }
+    
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary-color);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 3px;
+    }
+    
+    .result-summary {
+      margin-top: 20px;
+      padding: 20px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+    }
+    
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .summary-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    
+    .summary-item .label {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    .summary-item .value {
+      font-weight: 600;
+      color: var(--text-primary);
+      background: var(--primary-light);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+    }
+    
+    .error-list {
+      margin-top: 12px;
+      max-height: 120px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--error-color) transparent;
+    }
+    
+    .error-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .error-list::-webkit-scrollbar-thumb {
+      background: var(--error-color);
+      border-radius: 2px;
+    }
+    
+    .error-item {
+      padding: 8px 12px;
+      background: var(--surface-hover);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+      font-size: 11px;
+      color: var(--error-color);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--error-color);
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="language-switcher">
+      <h2 class="plugin-title">Layer Optimizer</h2>
+      <div style="display: flex; gap: 8px;">
+        <button id="lang-en" class="language-btn active" data-lang="en">English</button>
+        <button id="lang-zh" class="language-btn" data-lang="zh">中文</button>
+      </div>
+    </div>
+    
+    <div id="error-message" class="error" style="display: none;"></div>
+    <div id="success-message" class="success" style="display: none;"></div>
+    
+    <div id="initial-state">
+      <div class="button-group">
+        <button id="scan-button" class="primary-button" data-i18n="scanButton">Start Scan</button>
+      </div>
+    </div>
+    
+    <div id="loading-state" style="display: none;">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p id="loading-text" data-i18n="scanning">Scanning...</p>
+        <div id="progress-notification" class="notification info" style="display: none;"></div>
+        <div class="progress-container">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="result-state" style="display: none;">
+        <div class="section">
+          <div class="section-title">
+          <span data-i18n="issueList">Issue List</span>
+            <span id="redundant-layers-count" class="count">0</span>
+          </div>
+          <div id="redundant-layers-list" class="issue-list"></div>
+      </div>
+      
+      <div class="optimization-summary" id="optimization-summary" style="margin-top: 16px;" data-i18n-template="optimizeSummary">Will optimize <strong>{count}</strong> issues</div>
+      
+      <div class="button-group">
+        <button id="optimize-button" class="primary-button" data-i18n="optimizeButton">Optimize</button>
+        <button id="rescan-button" class="secondary-button" data-i18n="rescanButton">Rescan</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 语言文本映射
+    const translations = {
+      en: {
+        scanButton: 'Start Scan',
+        cancelButton: 'Cancel',
+        scanning: 'Scanning...',
+        optimizing: 'Optimizing...',
+        issueList: 'Issue List',
+        optimizeSummary: 'Will optimize <strong>{count}</strong> issues',
+        optimizeButton: 'Optimize',
+        rescanButton: 'Rescan',
+        noIssuesFound: 'No redundant layers detected',
+        frameNoVisual: '{type} has no visual effects',
+        frameContains: '{type} contains {childType}',
+        optimizeComplete: 'Optimization complete! Successfully processed {count} issues.',
+        optimizeCompleteWithErrors: 'Optimization complete! Successfully processed {count} issues. Encountered {errorCount} errors during processing.',
+        removedLayers: 'Removed redundant layers',
+        processingErrors: 'Errors during processing',
+        selectLayerFirst: '⚠️ Please select a container (Frame/Group) containing redundant layers first',
+        selectLayerToOptimize: '⚠️ Please select the layers to optimize',
+        noRedundantContainers: '👍 No redundant containers found that can be safely removed',
+        selectionChanged: 'Selection has changed',
+        rescanSelection: 'Rescan',
+        optimizeError: 'An error occurred during optimization:',
+        selectNodeError: 'Unable to select node:'
+      },
+      zh: {
+        scanButton: '开始扫描',
+        cancelButton: '取消',
+        scanning: '正在扫描...',
+        optimizing: '正在优化...',
+        issueList: '问题列表',
+        optimizeSummary: '优化将处理 <strong>{count}</strong> 个问题',
+        optimizeButton: '一键优化',
+        rescanButton: '重新扫描',
+        noIssuesFound: '未检测到冗余图层',
+        frameNoVisual: '{type} 无视觉效果',
+        frameContains: '{type} 包含 {childType}',
+        optimizeComplete: '优化完成！成功处理了 {count} 个问题。',
+        optimizeCompleteWithErrors: '优化完成！成功处理了 {count} 个问题。处理过程中遇到 {errorCount} 个错误。',
+        removedLayers: '移除冗余图层',
+        processingErrors: '处理过程中的错误',
+        selectLayerFirst: '⚠️ 请先选中一个包含冗余图层的容器 (Frame/Group)',
+        selectLayerToOptimize: '⚠️ 请先选中要优化的图层',
+        noRedundantContainers: '👍 未发现可安全移除的冗余容器',
+        selectionChanged: '选中内容已更改',
+        rescanSelection: '重新扫描',
+        optimizeError: '优化过程中发生错误:',
+        selectNodeError: '无法选择节点:'
+      }
+    };
+    
+    // 当前语言，默认为英文
+    let currentLang = 'en';
+    
+    // 获取翻译文本
+    function t(key, params = {}) {
+      let text = translations[currentLang][key] || translations.en[key] || key;
+      // 替换参数
+      Object.keys(params).forEach(param => {
+        text = text.replace(`{${param}}`, params[param]);
+      });
+      return text;
+    }
+    
+    // 翻译后端消息（后端发送的是英文，需要根据当前语言翻译）
+    function translateMessage(message) {
+      if (currentLang === 'en') {
+        return message; // 已经是英文，直接返回
+      }
+      
+      // 消息映射表：英文消息 -> 翻译key
+      const messageMap = {
+        '⚠️ Please select a container (Frame/Group) containing redundant layers first': 'selectLayerFirst',
+        '⚠️ Please select the layers to optimize': 'selectLayerToOptimize',
+        '👍 No redundant containers found that can be safely removed': 'noRedundantContainers',
+        'Scanning...': 'scanning',
+        'An error occurred during optimization:': 'optimizeError',
+        'Unable to select node:': 'selectNodeError',
+        'Selection has changed': 'selectionChanged'
+      };
+      
+      // 查找匹配的消息
+      for (const [enMsg, key] of Object.entries(messageMap)) {
+        if (message.includes(enMsg) || message.startsWith(enMsg)) {
+          const translated = t(key);
+          // 如果消息包含错误详情，保留错误详情
+          if (message.includes(':')) {
+            const errorDetail = message.split(':').slice(1).join(':').trim();
+            return translated + (errorDetail ? ': ' + errorDetail : '');
+          }
+          return translated;
+        }
+      }
+      
+      // 如果没有匹配，尝试直接翻译常见模式
+      if (message.includes('Scanning...')) {
+        const match = message.match(/Scanning\.\.\. (\d+)\/(\d+)/);
+        if (match) {
+          return t('scanning') + ' ' + match[1] + '/' + match[2];
+        }
+      }
+      
+      return message; // 无法翻译，返回原消息
+    }
+    
+    // 更新UI文本
+    function updateUIText() {
+      // 更新所有带 data-i18n 属性的元素
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+      });
+      
+      // 更新带 data-i18n-template 的元素
+      document.querySelectorAll('[data-i18n-template]').forEach(el => {
+        const key = el.getAttribute('data-i18n-template');
+        const count = el.textContent.match(/\d+/)?.[0] || '0';
+        el.innerHTML = t(key, { count });
+      });
+      
+      // 更新语言切换按钮状态
+      document.querySelectorAll('.language-btn').forEach(btn => {
+        if (btn.dataset.lang === currentLang) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+    
+    // 获取DOM元素
+    const initialState = document.getElementById('initial-state');
+    const loadingState = document.getElementById('loading-state');
+    const resultState = document.getElementById('result-state');
+    const errorMessage = document.getElementById('error-message');
+    const successMessage = document.getElementById('success-message');
+    const loadingText = document.getElementById('loading-text');
+    
+    const redundantLayersCount = document.getElementById('redundant-layers-count');
+    const redundantLayersList = document.getElementById('redundant-layers-list');
+    const optimizationSummary = document.getElementById('optimization-summary');
+    
+    const scanButton = document.getElementById('scan-button');
+    const optimizeButton = document.getElementById('optimize-button');
+    const rescanButton = document.getElementById('rescan-button');
+    
+    // 语言切换按钮
+    const langEnBtn = document.getElementById('lang-en');
+    const langZhBtn = document.getElementById('lang-zh');
+    
+    // 语言切换事件
+    langEnBtn.addEventListener('click', () => {
+      currentLang = 'en';
+      updateUIText();
+      updateOptimizationSummary();
+    });
+    
+    langZhBtn.addEventListener('click', () => {
+      currentLang = 'zh';
+      updateUIText();
+      updateOptimizationSummary();
+    });
+    
+    // 初始化UI文本
+    updateUIText();
+    
+    // 当前扫描结果
+    let currentIssues = { invalidNesting: [], redundantLayers: [] };
+    // 存储每个问题的选中状态
+    let issueCheckboxes = new Map();
+    
+    // 监听按钮点击事件
+    scanButton.addEventListener('click', () => {
+      showLoadingState(t('scanning'));
+      parent.postMessage({ pluginMessage: { type: 'scan-selection' } }, '*');
+    });
+    
+    optimizeButton.addEventListener('click', () => {
+      showLoadingState(t('optimizing'));
+      
+      // 获取所有选中的问题ID
+      const selectedIssueIds = [];
+      issueCheckboxes.forEach((checked, issueId) => {
+        if (checked) {
+          selectedIssueIds.push(issueId);
+        }
+      });
+      
+      parent.postMessage({ 
+        pluginMessage: {
+          type: 'optimize',
+          options: {
+            fixInvalidNesting: true,
+            fixRedundantLayers: true,
+            selectedIssueIds: selectedIssueIds
+          }
+        }
+      }, '*')
+    });
+    
+    rescanButton.addEventListener('click', () => {
+      showLoadingState(t('scanning'));
+      parent.postMessage({ pluginMessage: { type: 'scan-selection' } }, '*');
+    });
+    
+    // 更新优化摘要
+    function updateOptimizationSummary() {
+      let count = 0;
+      issueCheckboxes.forEach((checked) => {
+        if (checked) count++;
+      });
+      
+      optimizationSummary.innerHTML = t('optimizeSummary', { count });
+      
+      // 如果没有问题可优化，禁用优化按钮
+      optimizeButton.disabled = count === 0;
+    }
+    
+    // 监听来自插件的消息
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      
+      if (msg.type === 'no-issues') {
+        // 显示无问题需要优化的提示
+        showInfoMessage(translateMessage(msg.message));
+        showInitialState();
+      } else if (msg.type === 'scan-progress') {
+        // 更新扫描进度，但限制更新频率以避免页面抖动
+        // 只有当进度变化超过1%时才更新UI
+        const progressBar = document.getElementById('progress-bar');
+        if (progressBar) {
+          const currentWidth = parseInt(progressBar.style.width) || 0;
+          const newWidth = msg.progress;
+          
+          if (Math.abs(newWidth - currentWidth) >= 1) {
+            progressBar.style.width = `${msg.progress}%`;
+            loadingText.textContent = translateMessage(msg.message);
+          }
+        } else {
+          loadingText.textContent = translateMessage(msg.message);
+        }
+      } else if (msg.type === 'error') {
+        // 显示错误消息
+        showErrorMessage(translateMessage(msg.message));
+        showInitialState(); // 返回初始状态
+      } else if (msg.type === 'scan-result') {
+        currentIssues = msg.issues;
+        showResultState(msg.issues);
+        updateOptimizationSummary();
+      } else if (msg.type === 'optimize-complete') {
+        // 优化完成，直接返回初始状态
+        // 优化结果已在Figma画布中通过通知显示，不需要在插件页面重复显示
+        showInitialState();
+      } else if (msg.type === 'progress-update') {
+        // 显示进度更新，但避免频繁更新
+        const now = Date.now();
+        if (!window.lastProgressUpdate || now - window.lastProgressUpdate > 300) {
+          showProgressNotification(msg.message);
+        }
+        window.lastProgressUpdate = now;
+      } else if (msg.type === 'selection-changed') {
+        // 显示选中变化提示，不自动刷新
+        showWarningMessage(translateMessage(msg.message));
+        
+        // 移除之前的警告通知（如果有）
+        const existingWarning = document.querySelector('.warning-notification');
+        if (existingWarning) {
+          existingWarning.remove();
+        }
+        
+        // 添加一个重新扫描的提示按钮
+        const warningDiv = document.createElement('div');
+        warningDiv.className = 'warning-notification';
+        const rescanBtn = document.createElement('button');
+        rescanBtn.id = 'rescan-selection-btn';
+        rescanBtn.className = 'primary-button';
+        rescanBtn.textContent = t('rescanSelection');
+        warningDiv.innerHTML = `
+          <div class="warning-content">
+            <p>${msg.message}</p>
+          </div>
+        `;
+        warningDiv.querySelector('.warning-content').appendChild(rescanBtn);
+        
+        // 添加到结果区域顶部
+          const resultContainer = document.getElementById('result-state');
+        if (resultContainer && resultContainer.firstChild) {
+          resultContainer.insertBefore(warningDiv, resultContainer.firstChild);
+          
+          // 添加重新扫描按钮点击事件
+          rescanBtn.addEventListener('click', () => {
+            showLoadingState(t('scanning'));
+            parent.postMessage({ pluginMessage: { type: 'scan-selection' } }, '*');
+          });
+        }
+      } else if (msg.type === 'error') {
+        showErrorMessage(msg.message);
+        showInitialState();
+      }
+    };
+    
+    // 显示进度通知
+    function showProgressNotification(message) {
+      const notification = document.getElementById('progress-notification');
+      notification.textContent = message;
+      notification.style.display = 'block';
+    }
+    
+    // 显示警告消息
+    function showWarningMessage(message) {
+      const warningMessage = document.createElement('div');
+      warningMessage.className = 'notification warning';
+      warningMessage.textContent = message;
+      
+      // 插入到初始状态的开头
+      initialState.insertBefore(warningMessage, initialState.firstChild);
+      
+      // 5秒后自动隐藏
+      setTimeout(() => {
+        warningMessage.remove();
+      }, 5000);
+    }
+    
+    // 显示成功消息
+    function showSuccessMessage(message) {
+      successMessage.textContent = message;
+      successMessage.style.display = 'block';
+      
+      // 3秒后自动隐藏
+      setTimeout(() => {
+        successMessage.style.display = 'none';
+      }, 3000);
+    }
+    
+    // 显示信息消息
+    function showInfoMessage(message) {
+      const infoMessage = document.createElement('div');
+      infoMessage.className = 'notification info';
+      infoMessage.innerHTML = `<div style="white-space: pre-line;">${message}</div>`;
+      
+      // 插入到初始状态的开头
+      initialState.insertBefore(infoMessage, initialState.firstChild);
+      
+      // 8秒后自动隐藏
+      setTimeout(() => {
+        infoMessage.remove();
+      }, 8000);
+    }
+    
+    // 显示错误消息
+    function showErrorMessage(message) {
+      errorMessage.textContent = message;
+      errorMessage.style.display = 'block';
+      
+      // 3秒后自动隐藏
+      setTimeout(() => {
+        errorMessage.style.display = 'none';
+      }, 3000);
+    }
+    
+    // 隐藏错误消息
+    function hideErrorMessage() {
+      errorMessage.style.display = 'none';
+    }
+    
+    // 隐藏成功消息
+    function hideSuccessMessage() {
+      successMessage.style.display = 'none';
+    }
+    
+    // 显示优化摘要
+    function showOptimizationSummary(summary) {
+      // 创建摘要元素
+      const summaryElement = document.createElement('div');
+      summaryElement.className = 'result-summary';
+      
+      // 添加标题（暂时不显示，因为用户没有要求）
+      // const title = document.createElement('div');
+      // title.className = 'section-title';
+      // title.textContent = t('optimizeResultSummary');
+      // summaryElement.appendChild(title);
+      
+      // 添加冗余图层移除数量（合并无效嵌套和冗余图层）
+      const totalRemoved = (summary.invalidNestingFixed || 0) + (summary.redundantLayersRemoved || 0);
+      const layersItem = document.createElement('div');
+      layersItem.className = 'summary-item';
+      layersItem.innerHTML = `
+        <span class="label">${t('removedLayers')}</span>
+        <span class="value">${totalRemoved}</span>
+      `;
+      summaryElement.appendChild(layersItem);
+      
+      // 如果有错误，添加错误列表
+      if (summary.errors && summary.errors.length > 0) {
+        const errorsTitle = document.createElement('div');
+        errorsTitle.className = 'section-title';
+        errorsTitle.textContent = t('processingErrors');
+        errorsTitle.style.marginTop = '12px';
+        summaryElement.appendChild(errorsTitle);
+        
+        const errorList = document.createElement('div');
+        errorList.className = 'error-list';
+        
+        summary.errors.forEach(error => {
+          const errorItem = document.createElement('div');
+          errorItem.className = 'error-item';
+          errorItem.textContent = `${error.type} "${error.name}": ${error.error}`;
+          errorList.appendChild(errorItem);
+        });
+        
+        summaryElement.appendChild(errorList);
+      }
+      
+      // 插入到初始状态的开头
+      initialState.insertBefore(summaryElement, initialState.firstChild);
+      
+      // 10秒后自动隐藏
+      setTimeout(() => {
+        summaryElement.remove();
+      }, 10000);
+    }
+    
+    // 显示初始状态
+    function showInitialState() {
+      initialState.style.display = 'block';
+      loadingState.style.display = 'none';
+      resultState.style.display = 'none';
+    }
+    
+    // 显示加载状态
+    function showLoadingState(text = '正在扫描...') {
+      initialState.style.display = 'none';
+      resultState.style.display = 'none';
+      hideErrorMessage();
+      hideSuccessMessage();
+      
+      // 重置进度条，使用requestAnimationFrame确保平滑过渡
+      const progressBar = document.getElementById('progress-bar');
+      if (progressBar) {
+        progressBar.style.transition = 'none';
+        progressBar.style.width = '0%';
+        
+        // 强制浏览器重排
+        void progressBar.offsetWidth;
+        
+        // 恢复过渡效果
+        progressBar.style.transition = 'width 0.3s ease-out';
+      }
+      
+      loadingText.textContent = text;
+      loadingState.style.display = 'block';
+      
+      // 清除之前的更新时间戳
+      window.lastProgressUpdate = null;
+    }
+    
+    // 显示初始状态
+    function showInitialState() {
+      initialState.style.display = 'block';
+      loadingState.style.display = 'none';
+      resultState.style.display = 'none';
+    }
+    
+    // 显示结果状态
+    function showResultState(issues) {
+      initialState.style.display = 'none';
+      loadingState.style.display = 'none';
+      resultState.style.display = 'block';
+      
+      // 合并无效嵌套和冗余图层
+      const allIssues = [...issues.invalidNesting, ...issues.redundantLayers];
+      
+      // 更新冗余图层计数和列表
+      redundantLayersCount.textContent = allIssues.length;
+      redundantLayersList.innerHTML = '';
+      
+      // 清空之前的checkbox状态
+      issueCheckboxes.clear();
+      
+      if (allIssues.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state';
+        emptyState.textContent = t('noIssuesFound');
+        redundantLayersList.appendChild(emptyState);
+      } else {
+        allIssues.forEach(issue => {
+          const item = document.createElement('div');
+          item.className = 'issue-item';
+          
+          // 根据问题类型显示不同的描述
+          let description = '';
+          if (issue.childType) {
+            // 无效嵌套
+            description = t('frameContains', { type: issue.type, childType: issue.childType });
+          } else {
+            // 冗余图层
+            description = t('frameNoVisual', { type: issue.type });
+          }
+          
+          // 创建checkbox
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = true; // 默认勾选
+          checkbox.id = `issue-${issue.id}`;
+          
+          // 存储checkbox状态
+          issueCheckboxes.set(issue.id, true);
+          
+          // 监听checkbox变化
+          checkbox.addEventListener('change', (e) => {
+            e.stopPropagation(); // 阻止事件冒泡，避免触发item的click事件
+            issueCheckboxes.set(issue.id, checkbox.checked);
+            updateOptimizationSummary();
+          });
+          
+          // 创建内容区域
+          const content = document.createElement('div');
+          content.className = 'issue-content';
+          
+          // 创建名称
+          const name = document.createElement('div');
+          name.className = 'issue-name';
+          name.textContent = issue.name;
+          
+          // 创建tooltip
+          const tooltip = document.createElement('div');
+          tooltip.className = 'issue-tooltip';
+          const tooltipIcon = document.createElement('div');
+          tooltipIcon.className = 'issue-tooltip-icon';
+          tooltipIcon.textContent = '?';
+          const tooltipContent = document.createElement('div');
+          tooltipContent.className = 'issue-tooltip-content';
+          tooltipContent.textContent = description;
+          tooltip.appendChild(tooltipIcon);
+          tooltip.appendChild(tooltipContent);
+          
+          // 更新tooltip位置
+          function updateTooltipPosition() {
+            if (tooltipContent.style.opacity === '0') return; // 隐藏时不更新位置
+            
+            const iconRect = tooltipIcon.getBoundingClientRect();
+            // 计算tooltip位置：图标上方居中
+            const left = iconRect.left + iconRect.width / 2;
+            // 先显示tooltip以获取其高度
+            const wasVisible = tooltipContent.style.opacity === '1';
+            if (!wasVisible) {
+              tooltipContent.style.visibility = 'hidden';
+              tooltipContent.style.opacity = '1';
+            }
+            const tooltipHeight = tooltipContent.offsetHeight;
+            if (!wasVisible) {
+              tooltipContent.style.visibility = '';
+              tooltipContent.style.opacity = '0';
+            }
+            
+            tooltipContent.style.left = left + 'px';
+            tooltipContent.style.top = (iconRect.top - tooltipHeight - 8) + 'px';
+            tooltipContent.style.bottom = 'auto';
+          }
+          
+          // 鼠标进入时先显示tooltip再更新位置
+          tooltipIcon.addEventListener('mouseenter', () => {
+            tooltipContent.style.opacity = '1';
+            tooltipContent.style.pointerEvents = 'auto';
+            // 使用requestAnimationFrame确保DOM已更新
+            requestAnimationFrame(() => {
+              updateTooltipPosition();
+            });
+          });
+          
+          // 鼠标离开时隐藏tooltip
+          tooltipIcon.addEventListener('mouseleave', () => {
+            tooltipContent.style.opacity = '0';
+            tooltipContent.style.pointerEvents = 'none';
+          });
+          
+          // tooltip内容区域也监听鼠标事件，保持显示
+          tooltipContent.addEventListener('mouseenter', () => {
+            tooltipContent.style.opacity = '1';
+            tooltipContent.style.pointerEvents = 'auto';
+          });
+          
+          tooltipContent.addEventListener('mouseleave', () => {
+            tooltipContent.style.opacity = '0';
+            tooltipContent.style.pointerEvents = 'none';
+          });
+          
+          // 窗口滚动或调整大小时更新位置
+          window.addEventListener('scroll', updateTooltipPosition, true);
+          window.addEventListener('resize', updateTooltipPosition);
+          
+          // 组装内容
+          content.appendChild(name);
+          content.appendChild(tooltip);
+          
+          // 组装item
+          item.appendChild(checkbox);
+          item.appendChild(content);
+          
+          // checkbox点击事件：只处理checkbox本身的点击
+          checkbox.addEventListener('click', (e) => {
+            e.stopPropagation(); // 阻止事件冒泡到item
+            // checkbox的默认行为已经会切换状态，不需要额外处理
+          });
+          
+          // 点击内容区域（名称）时定位到图层
+          name.addEventListener('click', (e) => {
+            e.stopPropagation();
+            parent.postMessage({ 
+              pluginMessage: { 
+                type: 'select-node',
+                nodeId: issue.id 
+              }
+            }, '*');
+          });
+          
+          // 点击整个item区域（除了checkbox和tooltip）时也定位到图层
+          item.addEventListener('click', (e) => {
+            // 如果点击的是checkbox或tooltip，不处理（让它们各自处理）
+            if (e.target === checkbox || checkbox.contains(e.target) || 
+                e.target === tooltipIcon || tooltip.contains(e.target)) {
+              return;
+            }
+            // 点击item的其他区域，定位到图层
+            parent.postMessage({ 
+              pluginMessage: { 
+                type: 'select-node',
+                nodeId: issue.id 
+              }
+            }, '*');
+          });
+          
+          redundantLayersList.appendChild(item);
+        });
+      }
+      
+      // 更新优化摘要
+      updateOptimizationSummary();
+    }
+  </script>
+</body>
+</html>

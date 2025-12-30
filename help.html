@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图层优化助手 - 使用帮助</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+    h2 {
+      font-size: 18px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    p {
+      margin-bottom: 12px;
+    }
+    .step {
+      margin-bottom: 16px;
+      padding-left: 20px;
+      position: relative;
+    }
+    .step-number {
+      position: absolute;
+      left: 0;
+      font-weight: 500;
+    }
+    .tip {
+      background-color: #f0f9ff;
+      border-left: 4px solid #0d99ff;
+      padding: 12px;
+      margin: 16px 0;
+    }
+    .warning {
+      background-color: #fff9f0;
+      border-left: 4px solid #ff9d0d;
+      padding: 12px;
+      margin: 16px 0;
+    }
+    img {
+      max-width: 100%;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      margin: 12px 0;
+    }
+    .feature-list {
+      padding-left: 20px;
+    }
+    .feature-list li {
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>图层优化助手 - 使用帮助</h1>
+    
+    <h2>插件功能介绍</h2>
+    <p>图层优化助手是一款专为Figma设计师打造的插件，用于自动检测并优化设计稿中的无效嵌套结构和冗余图层。通过智能分析设计稿的层级结构，帮助设计师保持文件整洁、提高工作效率。</p>
+    
+    <h2>核心功能</h2>
+    <ul class="feature-list">
+      <li><strong>扫描并标记无效嵌套</strong> - 自动识别多余的嵌套结构，检测深层嵌套（超过3层）的情况</li>
+      <li><strong>识别冗余图层</strong> - 检测不包含任何视觉效果的容器，智能分析图层的实际作用</li>
+      <li><strong>一键优化</strong> - 自动移除无效嵌套，清理冗余图层，保持设计元素的样式、尺寸和位置不变</li>
+    </ul>
+    
+    <h2>使用步骤</h2>
+    
+    <div class="step">
+      <span class="step-number">1.</span>
+      <p>在Figma中选择需要优化的图层或组件。可以是单个组件，也可以是多个选中的元素。</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">2.</span>
+      <p>点击菜单 -> 插件 -> 图层优化助手 -> 打开插件</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">3.</span>
+      <p>在插件界面中点击"扫描"按钮，检测选中区域的问题</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">4.</span>
+      <p>查看检测结果，包括无效嵌套和冗余图层的详细信息</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">5.</span>
+      <p>点击"优化"按钮，自动修复检测到的问题</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">6.</span>
+      <p>查看优化结果摘要，了解具体修复的内容</p>
+    </div>
+    
+    <div class="tip">
+      <p><strong>提示：</strong> 优化过程会保持设计元素的样式、尺寸和位置不变，您可以放心使用。</p>
+    </div>
+    
+    <div class="warning">
+      <p><strong>注意：</strong> 使用前建议先备份您的设计文件。对于特殊用途的嵌套结构（如为了动画效果），插件可能会将其识别为问题，请根据实际需求决定是否优化。</p>
+    </div>
+    
+    <h2>常见问题</h2>
+    
+    <h3>Q: 插件会改变我的设计元素样式吗？</h3>
+    <p>A: 不会。插件在优化过程中会保持设计元素的样式、尺寸、间距和位置不变。</p>
+    
+    <h3>Q: 什么是无效嵌套？</h3>
+    <p>A: 无效嵌套是指不必要的层级结构，例如一个Frame内只有一个子元素且大小相同，这种情况下可以移除外层Frame而不影响设计效果。</p>
+    
+    <h3>Q: 什么是冗余图层？</h3>
+    <p>A: 冗余图层是指不包含任何视觉效果（如填充、描边、效果等）且没有特殊属性（如自动布局、约束等）的容器图层。</p>
+    
+    <h3>Q: 优化过程中出现错误怎么办？</h3>
+    <p>A: 插件会显示详细的错误信息，帮助您了解具体情况。如果问题持续存在，请尝试在更小范围的选区上使用插件。</p>
+  </div>
+</body>
+</html>
